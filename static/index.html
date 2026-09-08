@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FairSplit-AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1>FairSplit&thinsp;<span class="brand-dot">·</span>&thinsp;AI</h1>
+  <div class="step-dots">
+    <span class="dot active" data-step="1"></span>
+    <span class="dot" data-step="2"></span>
+    <span class="dot" data-step="3"></span>
+    <span class="dot" data-step="4"></span>
+  </div>
+</header>
+
+<main class="app">
+
+  <!-- SCREEN 1: Upload & Roster -->
+  <section class="screen active" id="screen-1">
+    <h2>Feed in the receipt</h2>
+
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="file-input" accept="image/*" capture="environment" multiple hidden />
+      <div id="dropzone-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L7 9m5-5l5 5M4 20h16"/></svg>
+        <p>Tap to take a photo or drop a receipt image</p>
+        <p class="hint">Multiple images = multi-page receipt</p>
+      </div>
+      <div id="preview-strip" class="preview-strip hidden"></div>
+    </div>
+
+    <div class="chrome-card">
+      <label for="member-input">Who's splitting?</label>
+      <input type="text" id="member-input" placeholder="Type a name, press Enter" />
+      <div class="tag-list" id="member-tags"></div>
+    </div>
+
+    <button id="scan-btn" class="primary-btn" disabled>
+      <span id="scan-btn-text">Scan Bill</span>
+      <span id="scan-spinner" class="spinner hidden"></span>
+    </button>
+    <p class="error-text" id="screen1-error"></p>
+  </section>
+
+  <!-- SCREEN 2: OCR Verification -->
+  <section class="screen" id="screen-2">
+    <h2>2 · Does this look right?</h2>
+
+    <div class="review-layout">
+      <div class="receipt-preview-pane">
+        <img id="receipt-preview-img" alt="Receipt preview" />
+      </div>
+
+      <div class="paper-card review-pane">
+        <div id="math-alert" class="alert alert-error hidden">
+          <strong>Numbers don't add up</strong>
+          <p id="math-alert-text"></p>
+        </div>
+
+        <label for="currency-select">Currency</label>
+        <select id="currency-select">
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+        </select>
+
+        <table class="items-table">
+          <thead>
+            <tr><th>Item</th><th>Category</th><th>Qty</th><th>Price</th><th></th></tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+        <button id="add-item-btn" class="ghost-btn">+ Add item</button>
+
+        <h3 class="section-subheading">Taxes, service charges &amp; discounts</h3>
+        <p class="hint">Leave category blank for a whole-bill charge. Set it (e.g. "Food") so that charge only applies to people who ordered that category.</p>
+        <div id="charges-list" class="charges-list"></div>
+        <button id="add-charge-btn" class="ghost-btn">+ Add charge</button>
+
+        <div class="totals-grid">
+          <label>Subtotal <input type="number" step="0.01" id="input-subtotal" /></label>
+          <label>Printed total <input type="number" step="0.01" id="input-printed-total" /></label>
+          <label class="total-field">Computed total <span id="computed-total" class="readonly-value">0.00</span></label>
+        </div>
+
+        <div id="review-reconciliation" class="alert alert-info hidden">
+          <strong>This doesn't match the printed total</strong>
+          <p id="review-reconciliation-text"></p>
+          <button type="button" id="auto-balance-btn" class="ghost-btn">Auto-balance with an adjustment line</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="secondary-btn" data-back="1">Back</button>
+      <button class="primary-btn" id="to-screen-3-btn">Assign Items →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: Assignment Matrix -->
+  <section class="screen" id="screen-3">
+    <h2>3 · Who had what?</h2>
+
+    <div class="chrome-card add-member-card">
+      <label for="screen3-member-input">Forgot someone? Add them here</label>
+      <input type="text" id="screen3-member-input" placeholder="Type a name, press Enter" />
+    </div>
+
+    <div class="pill-row" id="member-pill-row"></div>
+
+    <div class="paper-card">
+      <div id="assignment-cards" class="assignment-cards"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="secondary-btn" data-back="2">Back</button>
+      <button class="primary-btn" id="calculate-btn">Calculate Split →</button>
+    </div>
+    <p class="error-text" id="screen3-error"></p>
+  </section>
+
+  <!-- SCREEN 4: Final Settlement -->
+  <section class="screen" id="screen-4">
+    <h2>4 · Final settlement</h2>
+
+    <div class="paper-card">
+      <div id="member-summary-cards" class="member-summary-cards"></div>
+      
+      <!-- Detailed Breakdown Table Section -->
+      <div id="finalSummarySection" style="margin-top: 20px;">
+        <h3 class="section-subheading">Detailed Bill Breakdown</h3>
+        <div style="overflow-x: auto;">
+          <table id="breakdownTable" class="breakdown-table">
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Item Subtotal</th>
+                <th>Service Charge</th>
+                <th>Taxes</th>
+                <th>Final Total</th>
+              </tr>
+            </thead>
+            <tbody id="breakdownTableBody"></tbody>
+          </table>
+        </div>
+        <div id="grandTotalDisplay" class="grand-total"></div>
+      </div>
+
+      <div class="reconciliation-note" id="reconciliation-note"></div>
+    </div>
+
+    <button id="copy-whatsapp-btn" class="primary-btn">Copy WhatsApp Message</button>
+    <button class="secondary-btn" data-back="3">Back</button>
+    <button class="ghost-btn" id="start-over-btn">Start Over</button>
+  </section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

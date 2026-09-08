@@ -1,0 +1,1 @@
+"""Service layer: vision extraction and split arithmetic."""

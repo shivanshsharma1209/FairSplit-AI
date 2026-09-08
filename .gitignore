@@ -1,0 +1,18 @@
+# Python / Virtual Environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pyd
+
+# Environment Variables & Secrets
+.env
+.env.local
+service-account.json
+credentials.json
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
